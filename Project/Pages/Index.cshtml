@@ -1,0 +1,400 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Plan";
+}
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <defs>
+        <symbol id="next" viewBox="0 0 24 24">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path fill="currentColor" d="M12 4V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+        </symbol>
+    </defs>
+</svg>
+
+<script src="~/lib/daypilot/daypilot-all.min.js?v=1"></script>
+
+<div class="wrap">
+    <div class="left">
+        <div id="datepicker"></div>
+    </div>
+    <div class="right">
+        <div id="dp"></div>
+    </div>
+</div>
+
+<script>
+    
+    const dp = new DayPilot.Month("dp", {
+        startDate: DayPilot.Date.today(),
+        eventHeight: 70,
+        eventResizeHandling: "Disabled",
+        contextMenu: new DayPilot.Menu({
+            theme: "menu_maintenance",
+            onShow: args => {
+                const e = args.source;
+                const type = app.findType(e.data.type);
+                const desc = app.periodDescription(type.period);
+                let text = `Schedule next (in ${desc})`;
+                
+                if (e.data.next) {
+                    // id, date                                        
+                }
+                
+                const next = args.menu.items.find(i => i.id === "next");
+                next.text = text;
+                next.disabled = e.data.next;
+                
+                const del = args.menu.items.find(i => i.id === "delete");
+                del.disabled = e.data.next;
+
+            },
+            items: [
+                {     
+                    text: "Checklist",
+                    onClick: args => {
+                        app.showChecklist(args.source);
+                    }
+                },
+                {     
+                    text: "Next: Schedule",
+                    id: "next",
+                    onClick: async args => {
+                        const e = args.source;
+                        app.scheduleNext(e);
+                    }
+                },
+                {     
+                    text: "-",
+                },
+                {
+                    text: "Delete",
+                    id: "delete",
+                    onClick: async args => {
+                        const taskId = args.source.data.id;
+                        await DayPilot.Http.delete(`/api/Tasks/${taskId}`);
+                        dp.events.remove(args.source);
+                        
+                        const previous = dp.events.find((e) => e.data.next === taskId);
+                        
+                        if (previous) {
+                            previous.data.next = null;
+                            previous.data.nextDate = null;
+                            dp.events.update(previous);
+                        }
+                       
+                    }
+                }
+            ]
+        }),
+        onTimeRangeSelected: async args => {
+            const form = [
+                {name: "Resource", id: "text"},
+                {name: "Date", id: "date", type: "date", disabled: true},
+                {name: "Type", id: "type", type: "select", options: app.data.types}
+            ];
+            const data = {
+                start: args.start,
+                end: args.end,
+                type: app.data.types[0].id,
+                text: "",
+            };
+            
+            const modal = await DayPilot.Modal.form(form, data);
+            
+            if (modal.canceled) {
+                return;
+            }
+            
+            const result = modal.result;
+            
+            const {data:task} = await DayPilot.Http.post("/api/Tasks", result);
+            
+            dp.events.add(task);
+        },
+        onEventClick: async args => {
+            const e = args.e;
+            app.showChecklist(e);
+        },
+        onEventMove: async args => {
+            const e = args.e;
+            
+            const params = {
+                date: args.newStart
+            };
+        
+            // Send the new start date to the server
+            const {data:task} = await DayPilot.Http.post(`/api/Tasks/${e.data.id}/due-date`, params);
+        },
+        onBeforeEventRender: args => {
+            const type = app.findType(args.data.type);
+            const items = type.checklist || [];
+            const checked = args.data.checklist || {};
+            const completed = items.filter(i => checked[i.id]);
+            args.data.html = "";
+            
+            const total = items.length;
+            const done = completed.length === total && args.data.next;
+
+            args.data.backColor = type.color;
+            if (done) {
+                args.data.backColor = "#aaaaaa";
+                // args.data.backColor = DayPilot.ColorUtil.lighter(type.color, 3);
+            }
+            args.data.borderColor = "darker";
+            args.data.barColor = DayPilot.ColorUtil.darker(args.data.backColor, 2);
+            args.data.fontColor = "#ffffff";
+            
+            const barColor = DayPilot.ColorUtil.darker(args.data.backColor, 3);
+            const barColorChecked = DayPilot.ColorUtil.darker(args.data.backColor, 3);
+            
+            const barWidth = 15;
+            const barHeight = 15;
+            const barSpace = 2;
+            
+            args.data.areas = [
+                {
+                    top: 4,
+                    left: 10,
+                    text: args.data.text,
+                    fontColor: "#ffffff",
+                    style: "font-weight: bold"
+                },
+                {
+                    top: 24,
+                    left: 10,
+                    text: `${type.name} (${completed.length}/${total})`,
+                    fontColor: "#ffffff",
+                },
+                {
+                    top: 4,
+                    right: 4,
+                    height: 22,
+                    width: 22,
+                    padding: 2,
+                    fontColor: "#ffffff",
+                    backColor: barColor, 
+                    cssClass: "area-action",
+                    symbol: "icons/daypilot.svg#threedots-v",
+                    style: "border-radius: 20px",
+                    action: "ContextMenu",
+                    toolTip: "Menu"
+                }
+            ];
+            
+            const nextIcon = {
+                bottom: 5,
+                right: 5,
+                height: 20,
+                width: 20,
+                padding: 2,
+                backColor: barColor,
+                fontColor: "#ffffff",
+                cssClass: "area-action",
+                toolTip: "Next",
+                action: "None",
+                onClick: async args => {
+                    app.scheduleNext(args.source);
+                }
+            };
+            args.data.areas.push(nextIcon);
+            
+            if (args.data.next) {
+                args.data.moveDisabled = true;
+                nextIcon.symbol = "#next";
+            }
+            
+            items.forEach((it, x) => {
+                const isChecked = checked[it.id];
+                
+                const area = {
+                     bottom: barSpace + 4,
+                     height: barHeight,
+                     left: x * (barWidth + barSpace) + 10,
+                     width: barWidth,
+                     backColor: isChecked ? barColorChecked : barColor,
+                     fontColor: "#ffffff",
+                     padding: 0,
+                     toolTip: it.name,
+                     action: "None",
+                     cssClass: "area-action",
+                     onClick: async args => {
+                         const e = args.source;
+                         const itemId = it.id;
+                         if (!e.data.checklist) {
+                             e.data.checklist = {};
+                         }
+                         e.data.checklist[itemId] = !isChecked;
+                     
+                         // Send the updated checklist to the server
+                         await DayPilot.Http.post(`/api/tasks/${e.data.id}/update-checklist`, e.data.checklist);
+                     
+                         dp.events.update(args.source);
+                     }           
+                };
+                if (isChecked) {
+                    area.symbol = "icons/daypilot.svg#checkmark-4";
+                }
+                args.data.areas.push(area);           
+            });
+                        
+        }
+    });
+    
+    
+    const datepicker = new DayPilot.Navigator("datepicker", {
+        selectMode: "Month",
+        showMonths: 3,
+        skipMonths: 3,
+        onVisibleRangeChanged: args => {
+            app.loadBusy();
+        },
+        onTimeRangeSelected: args => {
+            dp.update({startDate: args.start});
+            app.loadEvents();
+        }
+    });
+    datepicker.init();
+    
+    const app = {
+        data: {
+            types: []
+        },
+        findType(id) {
+            return app.data.types.find(t => t.id === id);
+        },
+        periodDescription(spec) {
+            const {number, unit} = app.parsePeriod(spec);
+            
+            if (number === 1) {
+                return "1 " + unit.value.replace("s", "");
+            }
+            return `${number} ${unit.value}`;
+        },
+        parsePeriod(spec) {
+            const number = parseInt(spec);
+            
+            const unit = {
+                days: spec.includes("d"),                
+                weeks: spec.includes("w"),                
+                months: spec.includes("m"),                
+                years: spec.includes("y"), 
+                get value() {
+                    if (this.days) {
+                        return "days";
+                    }
+                    if (this.weeks) {
+                        return "weeks";
+                    }
+                    if (this.months) {
+                        return "months";
+                    }
+                    if (this.years) {
+                        return "years";
+                    }
+                }
+            };
+            
+            return {
+                number,
+                unit   
+            }
+            
+        },
+        nextDate(date, type) {
+            const spec = type.period;
+            
+            const {number, unit} = app.parsePeriod(spec);
+            
+            if (unit.days) {
+                return date.addDays(number);              
+            }
+            if (unit.weeks) {
+                return date.addDays(number*7);
+            }
+            if (unit.months) {
+                return date.addMonths(number);
+            }
+            if (unit.years) {
+                return date.addYears(number);
+            }
+            
+        },
+        async scheduleNext(e) {
+            const type = app.findType(e.data.type);
+            const nextDate = app.nextDate(e.start(), type);
+            
+            if (e.data.next) {
+                DayPilot.Modal.alert("Already scheduled.");
+                return;
+            }
+            
+            const modal = await DayPilot.Modal.confirm(`Schedule next task for: ${nextDate.toString("M/d/yyyy")}?`);
+            if (modal.canceled) {
+                return;
+            }
+            
+            const next = {
+                start: nextDate,
+                end: nextDate,
+                type: e.data.type,
+                text: e.data.text,
+            };
+            
+            const {data:task} = await DayPilot.Http.post(`/api/Tasks/${e.data.id}/schedule-next`, next);
+            
+            dp.events.add(task);
+            e.data.next = task.id;
+            e.data.nextDate = nextDate;
+            dp.events.update(e);
+        },
+        async showChecklist(e) {
+            const type = app.findType(e.data.type);
+            
+            const nextDate = e.data.nextDate ? new DayPilot.Date(e.data.nextDate).toString("dddd M/d/yyyy") : "N/A";
+            
+            const form = [
+                {name: "Checklist"},
+                ...type.checklist.map(i => ({...i, id: i.id.toString(), type: "checkbox" }) ),
+                {text: `Next: ${nextDate}`},
+            ];
+            const data = e.data.checklist;
+            
+            const modal = await DayPilot.Modal.form(form, data);
+            if (modal.canceled) {
+                return;
+            }
+            
+            e.data.checklist = modal.result;
+            
+            await DayPilot.Http.post(`/api/tasks/${e.data.id}/update-checklist`, e.data.checklist);
+            
+            dp.events.update(e);            
+        },
+        async loadTypes() {
+            const {data} = await DayPilot.Http.get("/api/Types");
+            app.data.types = data;
+        },
+        async loadEvents() {
+            const start = dp.visibleStart();
+            const end = dp.visibleEnd();
+            const {data} = await DayPilot.Http.get(`/api/Tasks?start=${start}&end=${end}`);
+            dp.update({events: data});
+        },
+        async loadBusy() {
+            const start = datepicker.visibleStart();
+            const end = datepicker.visibleEnd();
+            const {data} = await DayPilot.Http.get(`/api/Tasks?start=${start}&end=${end}`);
+            datepicker.update({events: data});
+        },
+        async init() {
+            dp.init();
+            await app.loadTypes();
+            app.loadEvents();
+            app.loadBusy();
+        }
+    };
+    app.init();
+
+</script>

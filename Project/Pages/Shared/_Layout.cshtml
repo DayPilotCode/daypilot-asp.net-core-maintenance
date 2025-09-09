@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ASP.NET Core Maintenance Scheduling (Open-Source)</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/menu_maintenance.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modal_maintenance.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Project.styles.css" asp-append-version="true" />
+</head>
+<body>
+<div class="header">
+    <h1><a href='https://code.daypilot.org/92491/asp-net-core-maintenance-scheduling'>ASP.NET Core Maintenance Scheduling (Open-Source)</a></h1>
+    <div><a href="https://javascript.daypilot.org/">DayPilot for JavaScript</a> - HTML5 Calendar/Scheduling Components for JavaScript/Angular/React/Vue</div>
+</div>
+
+<div class="main">
+    @RenderBody()
+</div>
+
+<script src="~/js/site.js" asp-append-version="true"></script>
+
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

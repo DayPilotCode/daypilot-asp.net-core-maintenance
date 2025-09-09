@@ -1,0 +1,133 @@
+/* page layout */
+
+p, body, td, input, select, button {
+    font-family: -apple-system,system-ui,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    font-size: 14px;
+}
+
+body {
+    padding: 0px;
+    margin: 0px;
+    background-color: #ffffff;
+}
+
+a {
+    color: #1155a3;
+}
+
+.space {
+    margin: 10px 0px 10px 0px;
+}
+
+.header {
+    background: #003267;
+    background: linear-gradient(to right, #011329 0%,#00639e 44%,#011329 100%);
+    padding: 20px 10px;
+    color: white;
+    box-shadow: 0px 0px 10px 5px rgba(0,0,0,0.75);
+    margin-bottom: 20px;
+}
+
+.header a {
+    color: white;
+}
+
+.header h1 a {
+    text-decoration: none;
+}
+
+.header h1 {
+    padding: 0px;
+    margin: 0px;
+}
+
+.main {
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.generated {
+    color: #999;
+}
+
+.generated a {
+    color: #999;
+}
+
+/* layout */
+.wrap {
+    display: flex;
+}
+
+.left {
+    margin-right: 10px;
+}
+.right {
+    flex-grow: 1;
+}
+
+
+/* checklist */
+
+.area-action {
+    cursor: pointer;
+}
+.area-action:hover {
+    opacity: 0.7;
+}
+
+.month_default_event {
+    overflow: hidden;
+}
+.month_default_event_inner {
+    padding-top: 4px;
+    align-items: start;
+    border-radius: 3px;
+}
+.month_default_event {
+    border-radius: 3px;
+}
+.month_default_event_bar {
+    border-radius: 3px;
+}
+
+
+/* date picker busy days */
+.navigator_default_busy.navigator_default_cell .navigator_default_cell_text {
+    border-bottom: 4px solid rgba(238,142,46,0.8);
+    box-sizing: border-box;
+}
+
+/* global */
+input[type=text],
+textarea,
+select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+/* modal */
+.modal_default_main {
+    border-radius: 5px;
+    border: 5px solid #999;
+}
+
+.modal_default_background {
+    opacity: 0.7;
+}
+
+.modal_default_ok, .modal_default_cancel {
+    background-color: #f3f3f3;
+    border: 1px solid #c0c0c0;
+    color: #333;
+    padding: 8px 0px;
+    width: 100px;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-right: 5px;
+
+}    
+    

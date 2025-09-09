@@ -1,0 +1,104 @@
+﻿.menu_maintenance_main {
+    user-select: none;
+    font-family: -apple-system,system-ui,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    font-size: 14px;
+    border: 1px solid #cccccc;
+    /*background-color: #f5f5f5;*/
+    background-color: #ffffff;
+    padding: 0px;
+    cursor: default;
+    box-shadow: 0px 0px 15px rgba(0,0,0,0.25);
+    /*box-shadow: 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12), 0 11px 15px -7px rgba(0,0,0,.2);*/
+    border-radius: 3px;
+    transition: box-shadow 0.3s ease;
+}
+
+.menu_maintenance_main, .menu_maintenance_main *, .menu_maintenance_main *:before, .menu_maintenance_main *:after {
+    box-sizing: border-box;
+}
+
+.menu_maintenance_title {
+    background-color: #e0e0e0;
+    border-bottom: 1px solid #c0c0c0;
+    padding: 8px 8px 8px 37px;
+    font-weight: 500;
+    border-radius: 7px 7px 0 0;
+}
+
+.menu_maintenance_main a {
+    padding: 4px 4px 4px 35px;
+    color: #333333;
+    text-decoration: none;
+    cursor: default;
+    transition: background-color 0.3s ease;
+}
+
+.menu_maintenance_main.menu_maintenance_withchildren a {
+    padding: 6px 35px 6px 35px;
+}
+
+.menu_maintenance_main a img {
+    margin-left: 8px;
+    margin-top: 3px;
+}
+
+.menu_maintenance_item_text {
+    display: block;
+    height: 24px;
+    line-height: 24px;
+    overflow: hidden;
+    padding-left: 4px;
+    padding-right: 20px;
+    white-space: nowrap;
+}
+
+.menu_maintenance_main a:hover {
+    background-color: #e0e0e0;
+}
+
+.menu_maintenance_main div div {
+    border-top: 1px solid #e0e0e0;
+    margin: 6px 0;
+    /*margin-left: 28px;*/
+    margin-left: 0px;
+}
+
+.menu_maintenance_main a.menu_maintenance_item_disabled {
+    color: #ccc;
+}
+
+.menu_maintenance_item_haschildren.menu_maintenance_item_haschildren_active {
+    background-color: #e0e0e0;
+}
+
+.menu_maintenance_item_haschildren a:before {
+    content: '';
+    border-width: 5px;
+    border-color: transparent transparent transparent #666;
+    border-style: solid;
+    width: 0px;
+    height: 0px;
+    position: absolute;
+    right: 5px;
+    margin-top: 5px;
+}
+
+.menu_maintenance_item_icon {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    padding: 4px 4px 4px 10px;
+}
+
+.menu_maintenance_item a i {
+    height: 24px;
+    line-height: 24px;
+}
+
+.menu_maintenance_item .menu_maintenance_item_symbol {
+    width: 20px;
+    height: 20px;
+    color: #999;
+    margin-left: 8px;
+    margin-top: 3px;
+}
