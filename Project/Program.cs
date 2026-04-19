@@ -7,6 +7,7 @@ builder.Services.AddDbContext<MaintenanceDbContext>(options => options
     .UseSqlServer(builder.Configuration.GetConnectionString("MaintenanceContext")));
 
 // Add services to the container.
+builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();

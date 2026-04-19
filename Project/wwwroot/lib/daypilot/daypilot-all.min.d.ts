@@ -1,27 +1,13 @@
 ﻿/*
-Copyright © 2025 Annpoint, s.r.o.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
--------------------------------------------------------------------------
-
-NOTE: Requires the following acknowledgement (see also NOTICE):
-This software includes DayPilot (https://www.daypilot.org).
+DayPilot Lite
+Copyright (c) 2005 - 2026 Annpoint s.r.o.
+https://www.daypilot.org/
+Licensed under Apache Software License 2.0
+Version: 2026.2.817-lite
 */
-
 type GlobalDate = Date;
 
-export module DayPilot {
+export namespace DayPilot {
 
     export class SchedulerPropsAndEvents {
         backendUrl?: string;
@@ -36,6 +22,8 @@ export module DayPilot {
         cellWidth?: number;
         cellsMarkBusiness?: boolean;
         contextMenu?: DayPilot.Menu;
+        cornerHtml?: string;
+        cornerText?: string;
         days?: number;
         durationBarHeight?: number;
         durationBarVisible?: boolean;
@@ -52,6 +40,7 @@ export module DayPilot {
         eventHeight?: number;
         eventMinWidth?: number;
         eventMoveHandling?: "Update" | "Disabled";
+        eventPadding?: string | number;
         eventResizeHandling?: "Update" | "Disabled";
         eventResizeMargin?: number;
         eventRightClickHandling?: "Enabled" | "Disabled" | "ContextMenu";
@@ -93,9 +82,12 @@ export module DayPilot {
         weekStarts?: "Auto" | number;
         width?: string;
         xssProtection?: "Enabled" | "Disabled";
+        zoomLevels?: ZoomLevel[];
+        zoomPosition?: "left" | "right" | "middle";
 
         onAfterUpdate?: EventHandler<SchedulerAfterUpdateArgs>;
         onBeforeCellRender?: EventHandler<SchedulerBeforeCellRenderArgs>;
+        onBeforeCornerRender?: EventHandler<SchedulerBeforeCornerRenderArgs>;
         onBeforeEventRender?: EventHandler<SchedulerBeforeEventRenderArgs>;
         onBeforeRowHeaderRender?: EventHandler<SchedulerBeforeRowHeaderRenderArgs>;
         onBeforeTimeHeaderRender?: EventHandler<SchedulerBeforeTimeHeaderRenderArgs>;
@@ -120,10 +112,13 @@ export module DayPilot {
         onTimeRangeClicked?: EventHandler<SchedulerTimeRangeClickedArgs>;
         onTimeRangeSelect?: EventHandler<SchedulerTimeRangeSelectArgs>;
         onTimeRangeSelected?: EventHandler<SchedulerTimeRangeSelectedArgs>;
+
+        onScroll?: EventHandler<SchedulerScrollArgs>;
     }
 
     export class SchedulerConfig extends SchedulerPropsAndEvents {
         events?: EventData[];
+        zoom?: number | string;
     }
 
     export class Scheduler extends SchedulerPropsAndEvents {
@@ -165,6 +160,11 @@ export module DayPilot {
             sort(spec?: string | { field: string, order?: "asc" | "desc" }): void;
             update(row: DayPilot.Row | ResourceData): void;
         };
+        zoom: {
+            setActive(index: number, position?: "left" | "middle" | "right"): void;
+            setActive(id: string, position?: "left" | "middle" | "right"): void;
+            active: number;
+        };
 
         constructor(id: string | HTMLElement, options?: SchedulerConfig);
 
@@ -175,6 +175,8 @@ export module DayPilot {
         disposed(): boolean;
 
         dragInProgress(): boolean;
+
+        getCoords(): { x: number, y: number, row: DayPilot.Row, time: DayPilot.Date };
 
         getDate(pixels: number, precise?: boolean, isEnd?: boolean): DayPilot.Date;
 
@@ -234,6 +236,17 @@ export module DayPilot {
                 text: string;
             };
         };
+    }
+
+    export interface SchedulerBeforeCornerRenderArgs {
+        readonly control: Scheduler;
+        html: string;
+        text: string;
+        backColor: string;
+        fontColor: string;
+        horizontalAlignment: HorizontalAlignment;
+        verticalAlignment: VerticalAlignment;
+        areas: AreaData[];
     }
 
     export interface SchedulerBeforeEventRenderArgs {
@@ -301,6 +314,7 @@ export module DayPilot {
         newStart: DayPilot.Date;
         newEnd: DayPilot.Date;
         newResource: ResourceId;
+        readonly alt: boolean;
         readonly ctrl: boolean;
         readonly shift: boolean;
         readonly meta: boolean;
@@ -317,6 +331,7 @@ export module DayPilot {
         readonly newStart: DayPilot.Date;
         readonly newEnd: DayPilot.Date;
         readonly newResource: ResourceId;
+        readonly alt: boolean;
         readonly ctrl: boolean;
         readonly shift: boolean;
         readonly meta: boolean;
@@ -330,6 +345,10 @@ export module DayPilot {
         newStart: DayPilot.Date;
         newEnd: DayPilot.Date;
         readonly what: "start" | "end";  // TODO check
+        readonly ctrl: boolean;
+        readonly shift: boolean;
+        readonly meta: boolean;
+        readonly alt: boolean;
 
         loaded(): void;
         preventDefault(): void;
@@ -343,6 +362,11 @@ export module DayPilot {
         readonly newStart: DayPilot.Date;
         readonly newEnd: DayPilot.Date;
         readonly what: "start" | "end";
+        readonly ctrl: boolean;
+        readonly shift: boolean;
+        readonly meta: boolean;
+        readonly alt: boolean;
+
     }
 
     export interface SchedulerEventRightClickArgs {
@@ -452,8 +476,19 @@ export module DayPilot {
         readonly control: DayPilot.Scheduler;
     }
 
+    export interface SchedulerScrollArgs {
+        readonly viewport: SchedulerViewport;
+        readonly control: DayPilot.Scheduler;
+    }
+
     // TODO check if all values are supported
     export type GroupBy = "Minute" | "Hour" | "Day" | "Week" | "Month" | "Quarter" | "Year" | "Cell" | "None";
+
+    export interface ZoomLevel {
+        properties: any;
+
+        [prop: string]: any;
+    }
 
     export interface SchedulerViewport {
         start: DayPilot.Date,
@@ -523,6 +558,7 @@ export module DayPilot {
         businessBeginsHour?: number;
         businessEndsHour?: number;
         cellHeight?: number;
+        cellDuration?: number;
         columnMarginLeft?: number;
         columnMarginRight?: number;
         columnsLoadMethod?: "POST" | "GET";
@@ -536,6 +572,7 @@ export module DayPilot {
         eventMoveHandling?: "Update" | "CallBack" | "Disabled";
         eventResizeHandling?: "Update" | "CallBack" | "Disabled";
         eventRightClickHandling?: "ContextMenu" | "Enabled" | "Disabled";
+        eventsLoadMethod?: "GET" | "POST";
         headerClickHandling?: "Enabled" | "Disabled";
         headerDateFormat?: string;
         headerHeight?: number;
@@ -549,6 +586,7 @@ export module DayPilot {
         loadingLabelHtml?: string;
         loadingLabelVisible?: boolean;
         locale?: string;
+        rtl?: boolean;
         showToolTip?: boolean;
         snapToGrid?: boolean;
         startDate?: DayPilot.Date | string;
@@ -833,6 +871,7 @@ export module DayPilot {
         eventDeleteHandling?: "Update" | "Disabled";
         eventMoveHandling?: "Update" | "CallBack" | "Notify" | "Disabled";
         eventResizeHandling?: "Update" | "CallBack" | "Notify" | "Disabled";
+        eventsLoadMethod?: "GET" | "POST";
         headerClickHandling?: "Enabled" | "Disabled" | "CallBack";
         headerHeight?: number;
         hideUntilInit?: boolean;
@@ -1040,14 +1079,18 @@ export module DayPilot {
     }
 
     export class NavigatorPropsAndEvents {
+        autoFocusOnClick?: boolean;
         cellHeight?: number;
         cellWidth?: number;
         command?: string;
         dayHeaderHeight?: number;
+        eventEndSpec?: "DateTime" | "Date";
         freeHandSelectionEnabled?: boolean;
         locale?: string;
+        month?: number;
         orientation?: "Vertical" | "Horizontal";
         rowsPerMonth?: "Auto" | "Six";
+        rtl?: boolean;
         selectionDay?: DayPilot.Date;
         selectionEnd?: DayPilot.Date;
         selectionStart?: DayPilot.Date;
@@ -1065,6 +1108,7 @@ export module DayPilot {
         todayText?: string;
         weekStarts?: "Auto" | number;
         weekNumberAlgorithm?: "Auto" | "US" | "ISO8601";
+        year?: number;
         timeRangeSelectedHandling?: "Bind" | "None";
         visibleRangeChangedHandling?: "Enabled" | "Disabled" | "CallBack";
 
@@ -1080,7 +1124,7 @@ export module DayPilot {
         events?: EventData[];
     }
 
-    interface NavigatorSelectOptions {
+    export interface NavigatorSelectOptions {
         dontFocus?: boolean;
         dontNotify?: boolean;
     }
@@ -1113,7 +1157,7 @@ export module DayPilot {
         visibleStart(): DayPilot.Date;
     }
 
-    interface NavigatorBeforeCellRenderArgs {
+    export interface NavigatorBeforeCellRenderArgs {
         readonly cell: {
             readonly day: DayPilot.Date;
             readonly isCurrentMonth: boolean;
@@ -1121,10 +1165,13 @@ export module DayPilot {
             readonly isWeekend: boolean;
             html: string;
             cssClass: string;
+            readonly events: {
+                all(): DayPilot.Event[];
+            }
         };
     }
 
-    interface NavigatorTimeRangeSelectArgs {
+    export interface NavigatorTimeRangeSelectArgs {
         readonly start: DayPilot.Date;
         readonly end: DayPilot.Date;
         readonly day: DayPilot.Date;
@@ -1133,7 +1180,7 @@ export module DayPilot {
         preventDefault(): void;
     }
 
-    interface NavigatorTimeRangeSelectedArgs {
+    export interface NavigatorTimeRangeSelectedArgs {
         readonly start: DayPilot.Date;
         readonly end: DayPilot.Date;
         readonly day: DayPilot.Date;
@@ -1145,13 +1192,13 @@ export module DayPilot {
         preventDefault(): void;
     }
 
-    interface NavigatorVisibleRangeChangeArgs {
+    export interface NavigatorVisibleRangeChangeArgs {
         readonly start: DayPilot.Date;
         readonly end: DayPilot.Date;
         preventDefault(): void;
     }
 
-    interface NavigatorVisibleRangeChangedArgs {
+    export interface NavigatorVisibleRangeChangedArgs {
         readonly start: DayPilot.Date;
         readonly end: DayPilot.Date;
     }
@@ -1230,6 +1277,7 @@ export module DayPilot {
         menuTitle?: string;
         onShow?: EventHandler<MenuShowArgs>;
         onHide?: EventHandler<MenuHideArgs>;
+        rtl?: boolean;
         showMenuTitle?: boolean;
         zIndex?: number;
         theme?: string;
@@ -1403,8 +1451,6 @@ export module DayPilot {
 
         getDayOfWeek(): number;
 
-        getYear(): number;
-
         getHours(): number;
 
         getMilliseconds(): number;
@@ -1441,10 +1487,10 @@ export module DayPilot {
         static parse(input: string, pattern: string, locale?: string | DayPilot.Locale): DayPilot.Date;
         static today(): DayPilot.Date;
         static now(): DayPilot.Date;
-        static Cache: DayPilotDateCache;
+        static Cache: DateCache;
     }
 
-    export class DayPilotDateCache {
+    export class DateCache {
         static clear(): void;
     }
 
@@ -1460,7 +1506,7 @@ export module DayPilot {
         static contrasting(color: string, light?: string, dark?: string): string;
     }
 
-    class Http {
+    export class Http {
         static get<T = any>(url: string, params?: Http.RequestParams): Promise<Http.Result<T>>;
         static post<T = any, B = any>(url: string, data: B, params?: Http.RequestParams): Promise<Http.Result<T>>;
         static put<T = any, B = any>(url: string, data: B, params?: Http.RequestParams): Promise<Http.Result<T>>;
@@ -1468,12 +1514,12 @@ export module DayPilot {
         static delete<T = any>(url: string, params?: Http.RequestParams): Promise<Http.Result<T>>;
     }
 
-    namespace Http {
-        interface RequestParams {
+    export namespace Http {
+        export interface RequestParams {
             contentType?: string;
             headers?: Record<string, string>;
         }
-        interface Result<T = any> {
+        export interface Result<T = any> {
             request: XMLHttpRequest;
             data?: T;
         }
@@ -1534,6 +1580,9 @@ export module DayPilot {
         end(): DayPilot.Date;
         end(newEnd: DayPilot.Date): void;
 
+        partStart(): DayPilot.Date;
+        partEnd(): DayPilot.Date;
+
         id(): EventId;
 
         text(): string;
@@ -1542,13 +1591,15 @@ export module DayPilot {
         resource(): ResourceId;
         resource(newResource: ResourceId): void;
 
+        tag(name: string): any;
+
         duration(): DayPilot.Duration;
     }
 
     export class Selection {
         start: DayPilot.Date;
         end: DayPilot.Date;
-        resource: string;
+        resource?: ResourceId;
     }
 
     export interface EventDataShort {
@@ -1569,6 +1620,8 @@ export module DayPilot {
         barColor?: string;
         barHidden?: boolean;
         borderColor?: string;
+        borderRadius?: string | number;
+        padding?: string | number;
         cssClass?: string;
         fontColor?: string;
         html?: string;
@@ -1585,6 +1638,7 @@ export module DayPilot {
         borderRadius?: number | string;
         bottom?: number | string;
         cssClass?: string;
+        cursor?: string;
         fontColor?: string;
         height?: number | string;
         horizontalAlignment?: HorizontalAlignment;
@@ -1630,13 +1684,16 @@ export module DayPilot {
         autoFocus?: boolean;
         autoStretch?: boolean;
         autoStretchFirstLoadOnly?: boolean;
+        cancelText?: string;
         container?: HTMLElement;
         disposeOnClose?: boolean;
         dragDrop?: boolean;
         focus?: string | { id: string, value: string | number };
         height?: number;
         left?: number;
+        locale?: string;
         loadingHtml?: string;
+        okText?: string;
         maxHeight?: number;
         scrollWithPage?: boolean;
         theme?: string;
